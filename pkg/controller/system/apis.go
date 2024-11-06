@@ -9,8 +9,8 @@ package system
 
 import (
 	"context"
-
 	"github.com/jinzhu/copier"
+	"gorm.io/gorm"
 
 	reqSystem "go-easy-admin/internal/model/request/system"
 	"go-easy-admin/internal/model/system"
@@ -51,10 +51,15 @@ func (sa *sysApis) Delete(id int) error {
 	if err != nil {
 		return err
 	}
-	if err = global.GORM.WithContext(sa.ctx).Delete(&api).Error; err != nil {
-		return global.DeleteErr(sa.tips, err)
-	}
-	return NewSysRBAC(sa.ctx).DeleteByAPIsID(id)
+
+	err = global.GORM.WithContext(sa.ctx).Transaction(func(tx *gorm.DB) error {
+		if err = NewSysRBAC(sa.ctx).DeleteByAPIsID(id); err != nil {
+			return global.DeleteErr(sa.tips, err)
+		} else {
+			return global.GORM.WithContext(sa.ctx).Delete(&api).Error
+		}
+	})
+	return err
 }
 
 func (sa *sysApis) Update(id int, req *reqSystem.UpdateAPIsReq) error {
