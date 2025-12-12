@@ -10,7 +10,6 @@ package system
 import (
 	"context"
 	"errors"
-
 	"github.com/jinzhu/copier"
 	"gorm.io/gorm"
 
